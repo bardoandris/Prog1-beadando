@@ -4,6 +4,7 @@
 
 int main(int argc, char *argv[]){
 	FILE *file; char path[50]; char key;
+	int width, height;
 	Cell *cells;
 	cells = initCells();
 	if(argc == 2) tryopen(argv[1], &file);
@@ -16,6 +17,6 @@ int main(int argc, char *argv[]){
 		tryopen(path, &file);
 		}
 	}
-
+	readsize(&width, &height, file);
 }
 
