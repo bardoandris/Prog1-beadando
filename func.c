@@ -1,8 +1,6 @@
 #include "func.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h> // mivel a végtelen, mint érték, nem létezik c-ben, 
-					//ezért a lehető legnagyobb érték megadásához kell ez a header
 void tryopen(char *arg, FILE **f){
 	char key = 'n';
 	if (!(*f = fopen(arg, "r+"))){
@@ -31,21 +29,22 @@ void enterpath(FILE **f, char *path){
 
 void initCells(Cell *cells){	// lehetne egy kicsit optimalizálni, kevesebb változót használni, 
 					// de magamat ismerve nem fogom tudni követni később
-	Cell passable, inpassable, city, freeway;
+	Cell passable , inpassable, city, freeway;
 	inpassable.speed = 0;
 	inpassable.symbol = '#';
 
 	passable.speed = 3;
 	passable.symbol = '.';
-	passable.cost = INT_MAX;
+	passable.cost = -1;
+	passable.distance = -1;
 
 	freeway.speed = 2;
 	freeway.symbol = '=';
-	freeway.cost = INT_MAX;
+	freeway.cost = -1;
 
 	city.speed = 2;
 	city.symbol = ':';
-	city.cost = INT_MAX;
+	city.cost = -1;
 	cells[0] = inpassable; 
 	cells[1] = passable; 
 	cells[2] = freeway; 
@@ -79,12 +78,40 @@ float square(float base){
 }
 
 void readmap(char **map, int width, int height, FILE* file){
-	map = (char**)calloc((width) * height, sizeof(char));
+	map = (char**)calloc(height, sizeof(char*));
+	for (int x = 0; x < height; x++) {
+		map[x] = (char*)calloc(width, sizeof(char));
+		fscanf(file, "%s", map[x]);
+	}
+}
+void convert_nulls(char **map, FILE * file, int height, int width){
 	for (int x = 0; x < height; x++) {
 		for (int y = 0; y < width - 1; y++) {
-			fgets(map[x], width, file);
+			if (map[x][y] == 0) {
+				map[x][y] = '#';
+			}
+		}
+	} 
+}
+
+int convert_tocells(char **map, int height, int width, Cell *cells, Cell **cellmap){
+	cellmap = calloc(height, sizeof(Cell*));
+	for (int x = 0; x < height; x++) {
+		cellmap[x] = calloc(width, sizeof(Cell));
+		for (int y = 0; y < width; y++) {
+		initCells(&cellmap[][])
 		}
 	}
+}
+
+int cell_search(Cell *cells, int length, char c, Cell *cellmap){
+	for (int x = 0; x < length; x++) {
+	if (cells[x].symbol == c){
+		*cellmap = cells[x];
+		return 1;
+	}
+	}
+	return 0;
 }
 
 void reversebubble(){

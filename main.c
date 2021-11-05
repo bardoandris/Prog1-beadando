@@ -4,8 +4,8 @@
 
 int main(int argc, char *argv[]){
 	FILE *file; char path[50] = "./maps/default.map"; char key, **map = NULL;
-	int width, height;
-	Cell cells[4];
+	int width, height, cell_length = 4;
+	Cell cells[cell_length], **cellmap;
 	initCells(cells);
 	if(argc == 2) tryopen(argv[1], &file);
 	else{
