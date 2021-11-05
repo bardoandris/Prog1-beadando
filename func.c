@@ -13,15 +13,14 @@ void tryopen(char *arg, FILE **f){
 		
 		} while (key == '\n');
 		if (key == 'n') {
-		enterpath(f); 
+		enterpath(f, arg); 
 		return; 
 		}
 	}
 	*f = fopen("./maps/default.map", "r+");
 }
 
-void enterpath(FILE **f){
-	char* path = malloc(sizeof(char) * 50);
+void enterpath(FILE **f, char *path){
 	do {
 		printf("Kérem adja meg a fájl elérését! \n");
 		scanf("%s", path);
@@ -30,10 +29,9 @@ void enterpath(FILE **f){
 	}while (!f);
 }
 
-Cell *initCells(){ // lehetne egy kicsit optimalizálni, kevesebb változót használni, 
-					//de magamat ismerve nem fogom tudni követni később
+void initCells(Cell *cells){	// lehetne egy kicsit optimalizálni, kevesebb változót használni, 
+					// de magamat ismerve nem fogom tudni követni később
 	Cell passable, inpassable, city, freeway;
-	Cell *cells = malloc(sizeof(Cell)*4);
 	inpassable.speed = 0;
 	inpassable.symbol = '#';
 
@@ -52,18 +50,43 @@ Cell *initCells(){ // lehetne egy kicsit optimalizálni, kevesebb változót has
 	cells[1] = passable; 
 	cells[2] = freeway; 
 	cells[3] = city;
-	return cells;
 }
-
+ // első sor beolvasva, visszaadja a szélesség*magasságot
 void readsize(int *width, int *height, FILE* file){
-	fscanf(file, "%d %d", width, height); // első sor beolvasva, visszaadja a szélesség*magasságot
+	fscanf(file, "%d %d", width, height);
+}
+// Babilóniai módszerrel számolok négyzetgyököt
+float babylonian(int S){ 
+	float guess;
+	switch (S) {
+	case 1:
+		guess = 1;
+	break;
+	case 2:
+		guess = 1.5;
+	break;
+	default:
+	guess = (float)S / 2;
+	break;
+	}
+	do {
+		guess = (guess + S/guess)/2;
+	} while(square(S - guess * guess) > 0.000001);
+	return guess;
+}
+float square(float base){
+	return base * base;
 }
 
-float babylonian(float square){ // Babilóniai módszerrel számolok négyzetgyököt
-	float guess = square / 2,temp;
-	do {
-		temp = guess;
-		guess = (guess + square/guess)/2;
-	} while((temp - guess)*(temp - guess) > 0.00001);
-	return guess;
+void readmap(char **map, int width, int height, FILE* file){
+	map = (char**)calloc((width) * height, sizeof(char));
+	for (int x = 0; x < height; x++) {
+		for (int y = 0; y < width - 1; y++) {
+			fgets(map[x], width, file);
+		}
+	}
+}
+
+void reversebubble(){
+
 }

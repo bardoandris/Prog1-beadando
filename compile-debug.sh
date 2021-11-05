@@ -1,2 +1,2 @@
 #!/bin/bash
-gcc *.c -g -o debug.e && gdb debug.e
+gcc *.c -Wall -g -o debug.e && gdb debug.e && rm debug.e
