@@ -29,26 +29,14 @@ void enterpath(FILE **f, char *path){
 
 void initCells(Cell *cells){	// lehetne egy kicsit optimalizálni, kevesebb változót használni, 
 					// de magamat ismerve nem fogom tudni követni később
-	Cell passable , inpassable, city, freeway;
-	inpassable.speed = 0;
-	inpassable.symbol = '#';
-
-	passable.speed = 3;
-	passable.symbol = '.';
-	passable.cost = -1;
-	passable.distance = -1;
-
-	freeway.speed = 2;
-	freeway.symbol = '=';
-	freeway.cost = -1;
-
-	city.speed = 2;
-	city.symbol = ':';
-	city.cost = -1;
-	cells[0] = inpassable; 
-	cells[1] = passable; 
-	cells[2] = freeway; 
-	cells[3] = city;
+	base_cell bc, hwc; impassable_cell ic; city_cell cc;
+	bc.speed = 3;	bc.distance = -1;	bc.symbol = '.';
+	hwc.speed = 2;	hwc.distance = -1;	hwc.symbol = '=';
+	cc.speed = 2;	cc.distance = -1;	cc.symbol = ':';
+	cells[0].BC = bc; cells[0].type = BASECELL;
+	cells[1].BC = hwc; cells[1].type = BASECELL;
+	cells[2].CC = cc; cells[2].type = CITYCELL;
+	cells[3].IC = ic; cells[3].type = IMPASSABLE;
 }
  // első sor beolvasva, visszaadja a szélesség*magasságot
 void readsize(int *width, int *height, FILE* file){
@@ -76,7 +64,7 @@ float babylonian(int S){
 float square(float base){
 	return base * base;
 }
-
+//VIGYÁZZ!! a beolvasott tömböt t[y][x] formában kell indexelni(előbb vertikálisan,majd horizontásisan)
 void readmap(char **map, int width, int height, FILE* file){
 	map = (char**)calloc(height, sizeof(char*));
 	for (int x = 0; x < height; x++) {
@@ -99,7 +87,7 @@ int convert_tocells(char **map, int height, int width, Cell *cells, Cell **cellm
 	for (int x = 0; x < height; x++) {
 		cellmap[x] = calloc(width, sizeof(Cell));
 		for (int y = 0; y < width; y++) {
-		initCells(&cellmap[][])
+		cell_search(cells, width, char c, Cell *cellmap)
 		}
 	}
 }
@@ -113,7 +101,9 @@ int cell_search(Cell *cells, int length, char c, Cell *cellmap){
 	}
 	return 0;
 }
+int link_cells(Cell **map, int width, int height){
 
+}
 void reversebubble(){
 
 }
