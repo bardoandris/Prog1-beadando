@@ -10,17 +10,15 @@
 ###........=.:.....====:.....
 ####......:=..#.........#.
 #######.......#.
-&& A kommentek kettő &.al kezdődnek
-&& A koordinátákból előre ki van vonva a tömbök nullás indexe miatti tolódás
-(6;15) = Budapest
-(5;7) = Győr
-(8;10) = Siófok
-(9;14) = Paks
-(10;10) = Pécs
-(7;29) = Debrecen
-(9;24) = Szeged
-(4;23) = Miskolc
-(4;33) = Nyíregyháza
-(4;29) = Tokaj
-(7;18) = Kecskemét
+(6;15)Budapest
+(5;7)Győr
+(8;10)Siófok
+(9;14)Paks
+(10;10)Pécs
+(7;29)Debrecen
+(9;24)Szeged
+(4;23)Miskolc
+(4;33)Nyíregyháza
+(4;29)Tokaj
+(7;18)Kecskemét
 

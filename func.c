@@ -30,9 +30,9 @@ void enterpath(FILE **f, char *path){
 void initCells(Cell *cells){	// lehetne egy kicsit optimalizálni, kevesebb változót használni, 
 					// de magamat ismerve nem fogom tudni követni később
 	base_cell bc, hwc; impassable_cell ic; city_cell cc;
-	bc.speed = 3;	bc.distance = -1;	bc.symbol = '.';
-	hwc.speed = 2;	hwc.distance = -1;	hwc.symbol = '=';
-	cc.speed = 2;	cc.distance = -1;	cc.symbol = ':';
+	bc.speed = 3;	bc.distance = -1;	bc.symbol = '.';	bc.visited = 0;
+	hwc.speed = 2;	hwc.distance = -1;	hwc.symbol = '=';	hwc.visited = 0;
+	cc.speed = 2;	cc.distance = -1;	cc.symbol = ':';	cc.visited = 0;
 	cells[0].BC = bc; cells[0].type = BASECELL;
 	cells[1].BC = hwc; cells[1].type = BASECELL;
 	cells[2].CC = cc; cells[2].type = CITYCELL;
@@ -87,23 +87,71 @@ int convert_tocells(char **map, int height, int width, Cell *cells, Cell **cellm
 	for (int x = 0; x < height; x++) {
 		cellmap[x] = calloc(width, sizeof(Cell));
 		for (int y = 0; y < width; y++) {
-		cell_search(cells, width, char c, Cell *cellmap)
+		cell_search(cells, map[x][y], &cellmap[x][y]);
 		}
 	}
 }
 
-int cell_search(Cell *cells, int length, char c, Cell *cellmap){
-	for (int x = 0; x < length; x++) {
-	if (cells[x].symbol == c){
-		*cellmap = cells[x];
-		return 1;
+int cell_search(Cell *cells, char c, Cell *cellmap){
+	if ((uint)c > 127){
+		
 	}
+	switch (cellmap->type) {
+	case IMPASSABLE:
+		for (int x = 0; x < 4; x++) {
+			if (cells[x].type == IMPASSABLE) {
+			*cellmap = cells[x];
+			return 0;
+			}
+		}
+	case BASECELL:
+		for (int x = 0; x < 4; x++) {
+			if (cells[x].BC.symbol == c) {
+				*cellmap = cells[x];
+				return 0;
+			}
+		}
+	case CITYCELL:
+
 	}
+	
 	return 0;
 }
 int link_cells(Cell **map, int width, int height){
 
 }
+int parse_cities(FILE *file, Definition *defs){
+	defs = (Definition*)calloc(sizeof(Definition), 1);
+}
+
+int parse_defs(Point *p, char *name, FILE *file){
+	int breaking = 0, x, y, i = 0, size, s_size = 15;
+	char c, *string = calloc(sizeof (char), s_size);
+	while ((c = getc(file)) != '\n'){
+		switch (c) {
+		case EOF:
+		return 1;
+		case '(':
+		breaking = 1; // sajnos egy break; nem működne itt
+		}
+	};
+
+	while ((c = getc(file))  >= '0' && c <= '9' ){
+		if (i < s_size - 1) string[i] = c;
+		else return 1;
+		i++;
+	};
+	size = i;
+	if (c != EOF && c != '\n'){
+		for (; i >= 0; i--) {
+			x += string[i] * (size - i);
+		}
+	}else return 1;
+	p->x = x;
+
+}
+	
+
 void reversebubble(){
 
 }
