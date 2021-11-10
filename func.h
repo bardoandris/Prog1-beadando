@@ -5,15 +5,11 @@ typedef struct BaseCell {
 	float speed, distance; 
 	char symbol;
 	int cost, visited; // az eddigi út költsége, speedek összege
-	struct cell *up, *down, *left, *right;
 } base_cell;
 
 typedef struct CityCell {
-	float speed, distance;
-	char symbol;
-	char *name;
-	int cost, visited;
-	struct cell *up, *down, *left, *right;
+	base_cell bc;
+	char name[100];
 } city_cell;
 
 typedef struct ImpCell{
@@ -29,25 +25,29 @@ typedef struct cell{
 		impassable_cell IC;
 	};
 	int type;
+	struct cell *up, *down, *left, *right;
 } Cell;
 typedef struct cellsortable{
 	Cell *current;
-	struct cellsortable *previous, *next;
+	struct cellsortable *next, *prev;
 } cell_sortable;
 typedef struct point {int x, y;} Point;
-typedef struct definition{Point P; char *name; struct definition *next;} Definition;
+typedef struct definition{Point P; char name[100]; struct definition *next;} Definition;
 void tryopen(char *arg, FILE **f);
 void enterpath(FILE **f, char *path);
 void initCells(Cell *cells);
 void readsize(int *width, int *height, FILE* file);
 float babylonian(int square);
 float square(float base);
-void readmap(char *map[], int width, int height, FILE *);
+void readmap(char ***map, int width, int height, FILE *);
 void convert_nulls(char **map, FILE *, int height, int width);
-int convert_tocells(char **map, int height, int width, Cell *cells, Cell **cellmap);
+int convert_tocells(char **map, int height, int width, Cell *cells, Cell ***cellmap);
 int cell_search(Cell *cells, char c, Cell *cellmap);
-int link_cells(Cell **map, int width, int height);
+cell_sortable *link_cells(Cell **map, int width, int height);
+void cellneighbour(Cell ** map , int x, int y, int width, int height);
 int parse_cities(FILE *file, Definition *defs);
-int parse_defs(Point *p, char *name, FILE *file);
+int parse_defs(Definition *def, FILE *file);
 Point parse_point(char *string);
 int power10(int n);
+int reverse_bubble(cell_sortable *unvis);
+void swap (cell_sortable *cs);
