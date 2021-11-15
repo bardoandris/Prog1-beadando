@@ -1,38 +1,21 @@
 #include <stdio.h>
-typedef struct BaseCell {
-	// a cell elhagyásának költsége, illetve a cell távolsága a céltól
-	// a speed az időköltség
-	float speed, distance; 
-	char symbol;
-	int cost, visited; // az eddigi út költsége, speedek összege
-} base_cell;
-
-typedef struct CityCell {
-	base_cell bc;
-	char name[100];
-} city_cell;
-
-typedef struct ImpCell{
-	char symbol;
-} impassable_cell;
 
 enum typelookup{BASECELL =1, CITYCELL = 2, IMPASSABLE = 3};
 
+typedef struct point {int x, y;} Point;
 typedef struct cell{
-	union{
-		city_cell CC;
-		base_cell BC;
-		impassable_cell IC;
-	};
-	int type;
-	struct cell *up, *down, *left, *right;
+	float speed, distance; 
+	char symbol;
+	int cost, type, goal;
+	Point pos;
+	char *name;
+	struct cell *up, *down, *left, *right, *from_where;
 } Cell;
 typedef struct cellsortable{
 	Cell *current;
 	struct cellsortable *next, *prev;
 } cell_sortable;
-typedef struct point {int x, y;} Point;
-typedef struct definition{Point P; char name[100]; struct definition *next;} Definition;
+typedef struct definition{Point P; char *name; struct definition *next;} Definition;
 void tryopen(char *arg, FILE **f);
 void enterpath(FILE **f, char *path);
 void initCells(Cell *cells);
@@ -48,6 +31,20 @@ void cellneighbour(Cell ** map , int x, int y, int width, int height);
 int parse_cities(FILE *file, Definition *defs);
 int parse_defs(Definition *def, FILE *file);
 Point parse_point(char *string);
+int determine(cell_sortable *cs);
+int maxint();
 int power10(int n);
-int reverse_bubble(cell_sortable *unvis);
+void bubble(cell_sortable **unvis);
 void swap (cell_sortable *cs);
+cell_sortable *minimum_distance(cell_sortable **unvisited);
+int dijkstra(cell_sortable *unvisited);
+int visit(cell_sortable *vis);
+void eliminate(cell_sortable *vis);
+void name_cities(Definition *defs, Cell **map);
+int ask_function();
+void ask_goal(int height, int width, Cell **map, Definition *defs);
+void init_goal(Cell *goal, Cell *start);
+void list_cities(Definition *defs);
+int compare_position(Point A, Point B);
+Point parse_coords(char *string, int length);
+Point search_city(char* input, int length, Cell **map, int width, int height);

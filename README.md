@@ -7,6 +7,9 @@
 * Egyenlőségjellel (=) vannak jelölve a gyorsfolgalmi utak, amiknek időigénye 2
 * Kettősponttal jelöltem a nevezetes helyeket, amiknek a fájl alján van hozzárendelve egy településnév. Praktikussági szempontokból az időigénye szintén 2, így a súlyozott algoritmusban biztos átmegy rajta az útkereső
 
+## Első sor (pl "12 22")
+Az első sor tartalmazza a sorok szélességét <strong>\n-el eggyütt!</strong>, utána pedig a sorok számát
+
 ## Koordináták száma
 1. a fájl soronként vannak olvasva, ezért (x;y) [azaz (oszlop;sor)] koordináták helyett (y;x) [(sor;oszlop)] sorrenddel vannak a *.map fájlok jelölve
 2. a sorszám az első méretet jelülő sor miatt eggyel lejjebb van csúszva 
