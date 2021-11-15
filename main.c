@@ -3,13 +3,15 @@
 #include <stdlib.h>
 
 int main(int argc, char *argv[]){
-	FILE *file; char path[50] = "./maps/default.map"; char key, **map = NULL;
-	Definition *defs;
-	int width, height, cell_length = 4, FILE_ERROR = 0;
+	FILE *file; char path[50] = "./maps/default.map"; char key, **charmap = NULL;
+	Definition *defs = calloc(1, sizeof(Definition));
+	int width, height, cell_length = 4, FILE_ERROR = 0, cancellation = 0;
 	Cell cells[cell_length], **cellmap;
+	cell_sortable *unvisited;
 	initCells(cells);
 // Fájlbeolvasás kezdete
 do{
+	FILE_ERROR = 0;
 	if(argc == 2) tryopen(argv[1], &file);
 	else{
 		printf("Szeretné, ha az alapértelemezett fált olvasnám be? (I/n) \n (./maps/default.map)");
@@ -20,14 +22,21 @@ do{
 		tryopen(path, &file);
 		}
 	}
-	readsize(&width, &height, file);
-	readmap(&map, width, height, file);
+	if(readsize(&width, &height, file) != 2){
+		FILE_ERROR = 1; continue;
+	}
+	readmap(&charmap, width, height, file);
 	FILE_ERROR = parse_cities(file, defs);
 	//fájlbeolvasás vége
-}
-while(!FILE_ERROR);
+}while(FILE_ERROR == 1);
 
-	convert_nulls(map, file, height, width);
-	convert_tocells(map, height, width, cells, &cellmap);
+	convert_nulls(charmap, file, height, width);
+	convert_tocells(charmap, height, width, cells, &cellmap);
+	name_cities(defs, cellmap);
+	
+	while(!cancellation){
+	unvisited = link_cells(cellmap, width, height);
+	dijkstra(unvisited, ask_goal(height, width, cellmap, defs));
+	}
 }
 

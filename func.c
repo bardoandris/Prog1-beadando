@@ -35,14 +35,15 @@ void initCells(Cell *cells){	// lehetne egy kicsit optimalizálni, kevesebb vál
 	bc.speed = 3;	bc.cost = MAX;	bc.symbol = '.';	bc.name = 0;	//bc.visited = 0;
 	hwc.speed = 2;	hwc.cost = MAX;	hwc.symbol = '=';	hwc.name = 0;//hwc.visited = 0;
 	cc.speed = 2;	cc.cost = MAX;	cc.symbol = ':';	cc.name = 0;//cc.visited = 0;
+	ic.symbol = '#';
 	cells[0] = bc; cells[0].type = BASECELL;
 	cells[1] = hwc; cells[1].type = BASECELL;
 	cells[2] = cc; cells[2].type = CITYCELL;
 	cells[3] = ic; cells[3].type = IMPASSABLE;
 }
  // első sor beolvasva, visszaadja a szélesség*magasságot
-void readsize(int *width, int *height, FILE* file){
-	fscanf(file, "%d %d", width, height);
+int readsize(int *width, int *height, FILE* file){
+	return fscanf(file, "%d %d %*c", width, height);
 }
 // Babilóniai módszerrel számolok négyzetgyököt
 float babylonian(int S){ 
@@ -70,8 +71,8 @@ float square(float base){
 void readmap(char ***map, int width, int height, FILE* file){
 	*map = (char**)calloc(height, sizeof(char**));
 	for (int x = 0; x < height; x++) {
-		(*map)[x] = (char*)calloc(width, sizeof(char));
-		fgets(*map[x], width, file);
+		(*map)[x] = (char*)calloc(width+1, sizeof(char));
+		fgets((*map)[x], width+1, file);
 	}
 }
 void convert_nulls(char **map, FILE * file, int height, int width){
@@ -150,14 +151,9 @@ cell_sortable *link_cells(Cell **map, int width, int height){
 	return first;
 }
 int parse_cities(FILE *file, Definition *defs){
-	defs = (Definition*)calloc(sizeof(Definition), 1);
-	defs->name = calloc(City_N_Length, sizeof(char));
 	Definition *prev , *iterator = defs;
-	int exit_code;
-	for (; (exit_code = parse_defs(iterator, file)) != 2; ) {
-		if (exit_code == 1) {
-		return 1;
-		}
+	defs->name = calloc(City_N_Length, sizeof(char));
+	for (; parse_defs(iterator, file) != 1; ) {
 		prev = iterator;
 		iterator->next = calloc(1, sizeof(Definition));
 		iterator->name = calloc(City_N_Length, sizeof(char));
@@ -170,8 +166,13 @@ int parse_cities(FILE *file, Definition *defs){
 }
 
 int parse_defs(Definition *def, FILE *file){
-	int breaking = 0, x = 0, y = 0, i = 0, size, num_size = 25;
-	char c, *string = calloc(sizeof (char), num_size);
+	if(fscanf(file," (%d;%d)%s\n", &def->P.x, &def->P.y, def->name) != EOF){
+		return 0;
+	}
+	else {
+		return 1;
+	}
+	/*char c;
 	while ((c = getc(file)) != '\n' && breaking != 1){
 		switch (c) {
 		case EOF:
@@ -179,34 +180,11 @@ int parse_defs(Definition *def, FILE *file){
 		case '(':
 		breaking = 1; // sajnos egy break; nem működne itt
 		}
-	};
-
-	while ((c = getc(file)) >= '0' && c <= '9' ){
-		if (i < num_size - 1) string[i] = c;
-		else return 1;
-		i++;
-	};
-	size = i;
-	if (c != EOF && c != '\n'){
-		for (; i >= 0; i--) {
-			x += (string[i] - '0') * power10(size - i);
-		}
-	}else return 1;
-	def->P.x = x - 1; //egy a pointer indexelés miatt
-	while ((c = getc(file))  >= '0' && c <= '9' ){
-		if (i < num_size - 1) string[i] = c;
-		else return 1;
-		i++;
-	};
-	size = i;
-	if (c != EOF && c != '\n'){
-		for (; i >= 0; i--) {
-			y += (string[i] - '0') * power10(size - i);
-		}
-	}else return 1;
-	def->P.y = y; //egyet levonunk az index miatt
-	fgets(def->name, 100, file);
-	return 0;
+	}
+	if ((deb = fscanf(file, "%d%*c%d%*c%s", &def->P.x, &def->P.y, def->name))) { // pl (x;y)Budapest
+		return 0;
+	}
+	return 1;*/
 }
 void bubble(cell_sortable **unvis){
 	int sorted;
@@ -360,18 +338,21 @@ int visit(cell_sortable *vis){
 		}
 	}
 	eliminate(vis);
+	return 0;
 }
-int dijkstra(cell_sortable *unvisited){
+int dijkstra(cell_sortable *unvisited, Cell *goal){
 	cell_sortable *valid;
+	while (1) {
 	bubble(&unvisited);
 	valid = minimum_distance(&unvisited);
 	if (valid == 0) {
 		return 1;
 	}
 	if(visit(valid)){
-		return 1;
+		print_route(goal);
+		return 0;
 	}
-	return 0;
+	}
 }
 // x0, x1, x2 ==> x0, x2
 void eliminate(cell_sortable *vis){
@@ -407,7 +388,7 @@ void init_goal(Cell *gl, Cell *start){
 	start->cost = 0;
 
 }
-void ask_goal(int height, int width, Cell** map, Definition* defs){
+Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 	char input[City_N_Length];
 	int x = 0, valid = 0; Point start, finish;
 	//Horizontális feldolgozás
@@ -446,7 +427,7 @@ void ask_goal(int height, int width, Cell** map, Definition* defs){
 			}
 		}
 	}
-	
+	return &map[finish.x][finish.y];
 }
 Point search_city(char *input, int length, Cell **map, int width, int height){
 	Cell selection; Point P; int i, strlen = 0;
@@ -478,4 +459,35 @@ int compare_position(Point A, Point B){
 		return 1;
 	}
 	return 0;
+}
+void print_route(Cell *goal){
+	cell_sortable *route = calloc(1, sizeof(cell_sortable));
+	route->current = goal;
+	route->next = calloc(1, sizeof(cell_sortable));
+	route->next->prev = route;
+	route = route->next;
+	printf("Az így fog kinézni az út: \n");
+	for (; route->prev->current->from_where != 0; route = route->next) {
+		
+		route->current = route->prev->current->from_where;
+		route->next = calloc(1, sizeof(cell_sortable));
+		route->next->prev = route;
+	}
+	route = route->prev;
+	free(route->next);
+	for (; route->prev != 0; route = route->prev) {
+		printf("(%d:%d)", route->current->pos.x, route->current->pos.y);
+		if (route->current->type == CITYCELL) {
+			printf(" = %s\n", route->current->name);
+		}else {
+		printf("\n");
+		}
+	}
+	printf("(%d:%d)", route->current->pos.x, route->current->pos.y);
+	if (route->current->type == CITYCELL) {
+		printf(" = %s\n", route->current->name);
+	}else{
+		printf("\n");
+	}
+	
 }
