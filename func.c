@@ -166,7 +166,7 @@ int parse_cities(FILE *file, Definition *defs){
 }
 
 int parse_defs(Definition *def, FILE *file){
-	if(fscanf(file," (%d;%d)%s\n", &def->P.x, &def->P.y, def->name) != EOF){
+	if(fscanf(file,"(%d;%d)%s", &def->P.x, &def->P.y, def->name) != EOF){
 		return 0;
 	}
 	else {
