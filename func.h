@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-enum typelookup{BASECELL =1, CITYCELL = 2, IMPASSABLE = 3};
+enum typelookup{BASECELL =0, CITYCELL = 1, IMPASSABLE = 2};
 
 typedef struct point {int x, y;} Point;
 typedef struct cell{
@@ -28,7 +28,7 @@ int convert_tocells(char **map, int height, int width, Cell *cells, Cell ***cell
 int cell_search(Cell *cells, char c, Cell *cellmap);
 cell_sortable *link_cells(Cell **map, int width, int height);
 void cellneighbour(Cell ** map , int x, int y, int width, int height);
-int parse_cities(FILE *file, Definition *defs);
+int parse_cities(FILE *file, Definition **defs);
 int parse_defs(Definition *def, FILE *file);
 Point parse_point(char *string);
 int determine(cell_sortable *cs);

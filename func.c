@@ -17,7 +17,7 @@ void tryopen(char *arg, FILE **f){
 		return;
 		}
 	}
-	*f = fopen("./maps/default.map", "r+");
+	*f = fopen("./maps/default.map", "r");
 }
 
 void enterpath(FILE **f, char *path){
@@ -25,25 +25,27 @@ void enterpath(FILE **f, char *path){
 		printf("Kérem adja meg a fájl elérését! \n");
 		scanf("%s", path);
 		*f = fopen(path, "r");
-		if (!f) printf("Nem valós fájlt adott meg!");
-	}while (!f);
+		if (!*f) printf("Nem valós fájlt adott meg!");
+	}while (!*f);
 }
 
 void initCells(Cell *cells){	// lehetne egy kicsit optimalizálni, kevesebb változót használni, 
 					// de magamat ismerve nem fogom tudni követni később
-	Cell bc, hwc, ic, cc; int MAX = maxint();
-	bc.speed = 3;	bc.cost = MAX;	bc.symbol = '.';	bc.name = 0;	//bc.visited = 0;
-	hwc.speed = 2;	hwc.cost = MAX;	hwc.symbol = '=';	hwc.name = 0;//hwc.visited = 0;
-	cc.speed = 2;	cc.cost = MAX;	cc.symbol = ':';	cc.name = 0;//cc.visited = 0;
-	ic.symbol = '#';
-	cells[0] = bc; cells[0].type = BASECELL;
+	Cell *bc = &cells[0], *hwc = &cells[1], *cc = &cells[2], *ic = &cells[3]; int MAX = maxint();
+	bc->speed = 3;	bc->cost = MAX;	bc->symbol = '.';	bc->name = 0;	bc->type = BASECELL;		//bc.visited = 0;
+	hwc->speed = 2;	hwc->cost = MAX;	hwc->symbol = '=';	hwc->name = 0;	hwc->type = BASECELL;	//hwc.visited = 0;
+	cc->speed = 2;	cc->cost = MAX;	cc->symbol = ':';	cc->name = 0; cc->type = CITYCELL;			//cc.visited = 0;
+	ic->symbol = '#'; ic->type = IMPASSABLE;
+	/*cells[0] = bc; cells[0].type = BASECELL;
 	cells[1] = hwc; cells[1].type = BASECELL;
 	cells[2] = cc; cells[2].type = CITYCELL;
-	cells[3] = ic; cells[3].type = IMPASSABLE;
+	cells[3] = ic; cells[3].type = IMPASSABLE; */
 }
  // első sor beolvasva, visszaadja a szélesség*magasságot
 int readsize(int *width, int *height, FILE* file){
-	return fscanf(file, "%d %d %*c", width, height);
+	char size[20];
+	fgets(size, 20, file);
+	return sscanf(size, "%d %d\n", width, height);
 }
 // Babilóniai módszerrel számolok négyzetgyököt
 float babylonian(int S){ 
@@ -67,22 +69,28 @@ float babylonian(int S){
 float square(float base){
 	return base * base;
 }
-//VIGYÁZZ!! a beolvasott tömböt t[x][y]-ban lehet megadni, ahol x a sorszám, y az oszlopszám
+//VIGYÁZZ!! a beolvasott tömböt t[x][y]-ban lehet indexelni, ahol x a sorszám, y az oszlopszám
 void readmap(char ***map, int width, int height, FILE* file){
-	*map = (char**)calloc(height, sizeof(char**));
+	*map = (char**)calloc(height, sizeof(char*));
 	for (int x = 0; x < height; x++) {
-		(*map)[x] = (char*)calloc(width+1, sizeof(char));
+		(*map)[x] = (char*)calloc(width+1, sizeof(char)); // plusz egy szélesség, hogy n szélesség mellett n+1 legyen a lezáró NULL bájt
 		fgets((*map)[x], width+1, file);
+		printf("%d\t%s", x , (*map)[x]);
 	}
 }
 void convert_nulls(char **map, FILE * file, int height, int width){
 	for (int x = 0; x < height; x++) {
-		for (int y = 0; y < width - 1; y++) {
-			if (map[x][y] == 0) {
+		for (int y = 0; y < width; y++) {
+			if (map[x][y] == 0 || map[x][y] == '\n') { //lehet, hogy egy sor nem "width" széles, és a sor közepén van egy enter, amit NULL-nak veszünk
 				map[x][y] = '#';
 			}
 		}
 	} 
+}
+void print_map(int height, char** map){
+	for (int h = 0; h < height; h++) {
+		printf("%s", map[h]);
+	}
 }
 
 int convert_tocells(char **map, int height, int width, Cell *cells, Cell ***cellmap){
@@ -90,8 +98,9 @@ int convert_tocells(char **map, int height, int width, Cell *cells, Cell ***cell
 	for (int x = 0; x < height; x++) {
 		(*cellmap)[x] = (Cell*)calloc(width, sizeof(Cell));
 		for (int y = 0; y < width; y++) {
-		if (cell_search(cells, map[x][y], &(*cellmap)[x][y]))
+		if (cell_search(cells, map[x][y], &(*cellmap)[x][y])){
 			return 1;
+		}
 		(*cellmap)[x][y].pos.x = x;
 		(*cellmap)[x][y].pos.y = y;
 		}
@@ -103,29 +112,10 @@ int cell_search(Cell *cells_list, char c, Cell *cellmap){
 	if ((uint)c > 127){
 	return 1;
 	}
-	switch (cellmap->type) {
-	case IMPASSABLE:
-		for (int x = 0; x < 4; x++) {
-			if (cells_list[x].type == IMPASSABLE) {
+	for (int x = 0; x < 4; x++) {
+		if (cells_list[x].symbol == c) {
 			*cellmap = cells_list[x];
-			return 0;
-			}
 		}
-	case BASECELL:
-		for (int x = 0; x < 4; x++) {
-			if (cells_list[x].symbol == c) {
-				*cellmap = cells_list[x];
-				return 0;
-			}
-		}
-	case CITYCELL:
-		for (int x = 0; x < 4; x++) {
-			if (cells_list[x].symbol == c) {
-				*cellmap = cells_list[x];
-				return 0;
-			}
-		}
-		break;
 	}
 	
 	return 0;
@@ -133,10 +123,9 @@ int cell_search(Cell *cells_list, char c, Cell *cellmap){
 //összeköti a celleket a szomszédjukkal, és visszaadja a meg nem látogatott cellek listáját
 cell_sortable *link_cells(Cell **map, int width, int height){
 	cell_sortable *first,*iter = calloc(1, sizeof(cell_sortable));
-	iter = calloc(1, sizeof(cell_sortable));
 	first = iter;
 	for(int x = 0; x < height; x++){
-		for (int y; y < width; y++) {
+		for (int y = 0; y < width; y++) {
 			if (!(map[x][y].type == IMPASSABLE)) {
 				cellneighbour(map, x, y, width, height);
 				iter->current = &map[x][y];
@@ -150,14 +139,15 @@ cell_sortable *link_cells(Cell **map, int width, int height){
 	free(iter);
 	return first;
 }
-int parse_cities(FILE *file, Definition *defs){
-	Definition *prev , *iterator = defs;
-	defs->name = calloc(City_N_Length, sizeof(char));
-	for (; parse_defs(iterator, file) != 1; ) {
+int parse_cities(FILE *file, Definition **defs){
+	Definition *prev , *iterator = *defs;
+	iterator->name = calloc(City_N_Length, sizeof(char));
+	for (int x = 0; x != 1; iterator = iterator->next ) {
 		prev = iterator;
 		iterator->next = calloc(1, sizeof(Definition));
 		iterator->name = calloc(City_N_Length, sizeof(char));
-		iterator = iterator->next;
+		x = parse_defs(iterator, file);
+		
 	}
 	free(iterator->name);
 	free(iterator);
@@ -166,12 +156,13 @@ int parse_cities(FILE *file, Definition *defs){
 }
 
 int parse_defs(Definition *def, FILE *file){
-	if(fscanf(file,"(%d;%d)%s", &def->P.x, &def->P.y, def->name) != EOF){
-		return 0;
+	char temp[City_N_Length];
+	if	(fgets(temp, City_N_Length, file)){
+		if(sscanf(temp,"(%d;%d)%s", &def->P.x, &def->P.y, def->name) == 3){
+			return 0;
+		}
 	}
-	else {
-		return 1;
-	}
+	return 1;
 	/*char c;
 	while ((c = getc(file)) != '\n' && breaking != 1){
 		switch (c) {
@@ -228,7 +219,7 @@ cell_sortable *calculate_distance(int count, cell_sortable *cs){
 	int dist_min;
 	for (; iterator->next != 0; iterator= iterator->next); // lista végére lépünk
 	for ( int i = count; i > 0; i--) {
-		iterator->current->distance = babylonian(square(iterator->current->pos.x + iterator->current->pos.y));
+		iterator->current->distance = babylonian(square(iterator->current->pos.x) + square(iterator->current->pos.y));
 	}
 	for (; iterator->next != 0; iterator= iterator->next);
 	dist_min = iterator->current->distance;
@@ -262,7 +253,7 @@ int maxint(){
 }
 void cellneighbour(Cell **map, int x, int y, int width, int height){
 	int has_up = 1, has_down = 1, has_right = 1, has_left = 1;
-	if (x == 0) {
+	if (x == 0) { // maximum két oldalon lehet cella, azok sem két ellenkezők, különben 1 széles/magas a térkép
 		has_up = 0;
 	}else if (x == height - 1) {
 		has_down = 0;
@@ -371,12 +362,12 @@ void eliminate(cell_sortable *vis){
 }
 void name_cities(Definition *defs, Cell **map){
 	for (; defs->next != 0; defs = defs->next) {
-		if (map[defs->P.x][defs->P.y].type != CITYCELL){
+		if (map[defs->P.x][defs->P.y].type == CITYCELL){
 			map[defs->P.x][defs->P.y].name = defs->name;
 	}else{
 			printf("WARN: NEM VÁROSBA PRÓBÁLT NÉVÍRÁS\n HIBA: ");
-			printf("(%d ; %d): %s\t", defs->P.x, defs->P.y, defs->name);
-			printf("NEM VÁROS");
+			printf("(%d;%d): %s\t", defs->P.x, defs->P.y, defs->name);
+			printf("NEM VÁROS\n");
 		}
 		}
 	if (defs->next != 0) {
@@ -395,7 +386,7 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 	while(1){
 		printf("Hol kezdjen a GPS? (Pozíció \"x:y\" vagy \"Városnév\")\n");
 		fgets(input, City_N_Length, stdin);
-		if (sscanf(input, "%d %*c %d", &start.x, &start.y) == 2) {
+		if (sscanf(input, " %d%*c%d", &start.x, &start.y) == 2) {
 			if (start.x >= 0 && start.x < width && start.y >= 0 && start.y < width
 				&& map[start.x][start.y].type != IMPASSABLE) {
 				break;
@@ -413,7 +404,7 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 	while(1){
 		printf("Hova menjen a GPS? (Pozíció \"x:y\" vagy \"Városnév\")\n");
 		fgets(input, City_N_Length, stdin);
-		if (sscanf(input, "%d %*c %d", &finish.x, &finish.y) == 2) {
+		if (sscanf(input, " %d%*c%d", &finish.x, &finish.y) == 2) {
 			if (finish.x >= 0 && finish.x < width && finish.y >= 0 && finish.y < width
 				&& map[finish.x][finish.y].type != IMPASSABLE && !compare_position(map[start.x][start.y].pos, map[finish.x][finish.y].pos)) {
 					break;
@@ -431,6 +422,7 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 }
 Point search_city(char *input, int length, Cell **map, int width, int height){
 	Cell selection; Point P; int i, strlen = 0;
+	sscanf(input, "%s\n", input); // enter kiszűrése
 	for (; strlen < length && input[strlen] != 0; strlen++)
 		for (int h = 0; h < height; h++) {
 			for (int w = 0; w < width; w++) {
@@ -465,8 +457,8 @@ void print_route(Cell *goal){
 	route->current = goal;
 	route->next = calloc(1, sizeof(cell_sortable));
 	route->next->prev = route;
-	route = route->next;
-	printf("Az így fog kinézni az út: \n");
+	//route = route->next;
+	printf("Az így fog kinézni az út:\n");
 	for (; route->prev->current->from_where != 0; route = route->next) {
 		
 		route->current = route->prev->current->from_where;
