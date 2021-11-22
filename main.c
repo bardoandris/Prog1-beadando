@@ -17,9 +17,11 @@ do{
 		printf("Szeretné, ha az alapértelemezett fált olvasnám be? (I/n) \n (./maps/default.map)");
 		key = getchar(); // ide *elvileg* nem kell entert szűrni, mert ez lesz az első 
 		if (key == 'i') {
-		file = fopen(path, "r");
+			file = fopen(path, "r");
 		}else{
-		tryopen(path, &file);
+			printf("Kérem írja be a fájl elérési útját!");
+			fscanf(stdin, "%s", path);
+			tryopen(path, &file);
 		}
 	} while (getchar() != '\n') {}
 	if(readsize(&width, &height, file) != 2){

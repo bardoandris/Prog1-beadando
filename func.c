@@ -17,7 +17,6 @@ void tryopen(char *arg, FILE **f){
 		return;
 		}
 	}
-	*f = fopen("./maps/default.map", "r");
 }
 
 void enterpath(FILE **f, char *path){
@@ -418,6 +417,7 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 			}
 		}
 	}
+	init_goal(&map[finish.x][finish.y], &map[start.x][start.y]);
 	return &map[finish.x][finish.y];
 }
 Point search_city(char *input, int length, Cell **map, int width, int height){
@@ -453,33 +453,15 @@ int compare_position(Point A, Point B){
 	return 0;
 }
 void print_route(Cell *goal){
-	cell_sortable *route = calloc(1, sizeof(cell_sortable));
-	route->current = goal;
-	route->next = calloc(1, sizeof(cell_sortable));
-	route->next->prev = route;
-	//route = route->next;
-	printf("Az így fog kinézni az út:\n");
-	for (; route->prev->current->from_where != 0; route = route->next) {
-		
-		route->current = route->prev->current->from_where;
-		route->next = calloc(1, sizeof(cell_sortable));
-		route->next->prev = route;
+	Cell * route = goal;
+	while (route->from_where != 0) {
+	printf("(%d:%d) ", route->pos.x, route->pos.y);
+	if (route->type == CITYCELL) {
+		printf("%s\n", route->name);
+	}else {
+	printf("\n");
 	}
-	route = route->prev;
-	free(route->next);
-	for (; route->prev != 0; route = route->prev) {
-		printf("(%d:%d)", route->current->pos.x, route->current->pos.y);
-		if (route->current->type == CITYCELL) {
-			printf(" = %s\n", route->current->name);
-		}else {
-		printf("\n");
-		}
-	}
-	printf("(%d:%d)", route->current->pos.x, route->current->pos.y);
-	if (route->current->type == CITYCELL) {
-		printf(" = %s\n", route->current->name);
-	}else{
-		printf("\n");
+	route = route->from_where;
 	}
 	
 }
