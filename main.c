@@ -7,7 +7,7 @@ int main(int argc, char *argv[]){
 	Definition *defs = calloc(1, sizeof(Definition));
 	int width, height, cell_length = 4, FILE_ERROR = 0, cancellation = 0;
 	Cell *cells = calloc(cell_length, sizeof(Cell)), **cellmap, *goal;
-	cell_sortable *unvisited;
+	cell_sortable *unvisited = 0;
 	initCells(cells);
 // Fájlbeolvasás kezdete
 do{
@@ -29,6 +29,7 @@ do{
 	}
 	readmap(&charmap, width, height, file);
 	FILE_ERROR = parse_cities(file, &defs);
+
 	//fájlbeolvasás vége
 }while(FILE_ERROR == 1);
 
@@ -38,8 +39,8 @@ do{
 	
 	//while(!cancellation){
 	unvisited = link_cells(cellmap, width, height);
+	
 	dijkstra(unvisited, (goal = ask_goal(height, width, cellmap, defs)));
-	print_route(goal);
 	//}
 }
 

@@ -34,7 +34,7 @@ Point parse_point(char *string);
 int determine(cell_sortable *cs);
 int maxint();
 int power10(int n);
-void bubble(cell_sortable **unvis);
+cell_sortable *bubble(cell_sortable **unvis);
 void swap (cell_sortable *cs);
 cell_sortable *minimum_distance(cell_sortable **unvisited);
 int dijkstra(cell_sortable *unvisited, Cell *goal);
@@ -49,3 +49,6 @@ int compare_position(Point A, Point B);
 Point parse_coords(char *string, int length);
 Point search_city(char* input, int length, Cell **map, int width, int height);
 void print_route(Cell *goal);
+
+//Szigorúan debug jelleggel alkamazott függvények
+void nullcell(cell_sortable *unvis); 

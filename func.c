@@ -176,9 +176,9 @@ int parse_defs(Definition *def, FILE *file){
 	}
 	return 1;*/
 }
-void bubble(cell_sortable **unvis){
+cell_sortable *bubble(cell_sortable **unvis){
 	int sorted;
-	cell_sortable *iterator = *unvis;
+	cell_sortable *iterator = *unvis, *rewind;
 	do{
 		sorted = 1;
 		while (1) {
@@ -186,6 +186,7 @@ void bubble(cell_sortable **unvis){
 				if (iterator->current->cost < iterator->next->current->cost) {
 				swap(iterator);
 				sorted = 0;
+				continue; //ha megtörtént a csere, akkor a jelenlegi elemet akarjuk tobább "buborékoltatni"
 				}
 			}else {
 			break;
@@ -194,8 +195,11 @@ void bubble(cell_sortable **unvis){
 		}
 		
 	}while(!sorted);
-	for (; iterator->prev != 0; iterator = iterator->prev) {}
-	*unvis = iterator;
+	rewind = iterator;
+	for (; rewind->prev != 0; rewind = rewind->prev) {}
+	*unvis = rewind;
+	for (; iterator->next != 0; iterator = iterator->next) {}
+	return iterator;
 }
 //visszaadja, hogy hány darab van a legkisebb elemből
 //ha több mint egy, akkor el kell végezni a heurisztikus számolást (count-szor)
@@ -282,17 +286,20 @@ void cellneighbour(Cell **map, int x, int y, int width, int height){
 // ez fogja megadni azt a cellát, amire végre kell hajtani a "látogatást"
 cell_sortable *minimum_distance(cell_sortable **unvisited){
 	int i;
-	bubble(unvisited);
 	i = determine(*unvisited);
 	if (i == -1) {
 	return 0;
 	}
-	return calculate_distance(i, *unvisited);
+	return 1;
 }
 int visit(cell_sortable *vis){
-	Cell *up, *down, *left, *right;
-	if	((up = vis->current->up) != 0 &&
-		up->cost < vis->current->cost + vis->current->speed) {
+	Cell 
+		*up = vis->current->up,
+		*down = vis->current->down,
+		*left = vis->current->left,
+		*right = vis->current->left;
+	if	(up != 0 &&
+		up->cost > vis->current->cost + vis->current->speed) {
 
 		up->cost = vis->current->cost + vis->current->speed;
 		up->from_where = vis->current;
@@ -300,8 +307,8 @@ int visit(cell_sortable *vis){
 			return 1;
 		}
 	}
-	if	((down = vis->current->down) != 0 &&
-		down->cost < vis->current->cost + vis->current->speed) {
+	if	(down != 0 &&
+		down->cost > vis->current->cost + vis->current->speed) {
 
 		down->cost = vis->current->cost + vis->current->speed;
 		down->from_where = vis->current;
@@ -309,8 +316,8 @@ int visit(cell_sortable *vis){
 			return 1;
 		}
 	}
-	if	((left = vis->current->up) != 0 &&
-		left->cost < vis->current->cost + vis->current->speed) {
+	if	(left != 0 &&
+		left->cost > vis->current->cost + vis->current->speed) {
 
 		left->cost = vis->current->cost + vis->current->speed;
 		left->from_where = vis->current;
@@ -318,8 +325,8 @@ int visit(cell_sortable *vis){
 			return 1;
 		}
 	}
-	if	((right = vis->current->up) != 0 &&
-		right->cost < vis->current->cost + vis->current->speed) {
+	if	(right != 0 &&
+		right->cost > vis->current->cost + vis->current->speed) {
 
 		right->cost = vis->current->cost + vis->current->speed;
 		right->from_where = vis->current;
@@ -331,31 +338,32 @@ int visit(cell_sortable *vis){
 	return 0;
 }
 int dijkstra(cell_sortable *unvisited, Cell *goal){
-	cell_sortable *valid;
+#ifdef DEBUG
+	int x = 0;
+#endif
 	while (1) {
-	bubble(&unvisited);
-	valid = minimum_distance(&unvisited);
-	if (valid == 0) {
-		return 1;
-	}
-	if(visit(valid)){
-		print_route(goal);
-		return 0;
-	}
+		if(visit(bubble(&unvisited))){
+			print_route(goal);
+			return 0;
+		}
+		#ifdef DEBUG
+		nullcell(unvisited);
+		printf("%d", x++);
+		#endif
 	}
 }
 // x0, x1, x2 ==> x0, x2
 void eliminate(cell_sortable *vis){
 	cell_sortable *x0 = vis->prev, *x1 = vis, *x2 = vis->next;
-	if (x0 != 0) {
-		x0->next = x2;
-	}else {
-		x2->prev = 0 ;
+	if (x0 == 0 && x2 != 0) {
+		x2->prev = 0;
 	}
-	if (x2 != 0) {
-		x2->prev = x0;
-	}else {
+	if (x2 == 0 && x0 != 0) {
 		x0->next = 0;
+	}
+	if (x0 != 0 && x2 != 0) {
+		x0->next = x2;
+		x2->prev = x0;
 	}
 	free(vis);
 }
@@ -385,7 +393,7 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 	while(1){
 		printf("Hol kezdjen a GPS? (Pozíció \"x:y\" vagy \"Városnév\")\n");
 		fgets(input, City_N_Length, stdin);
-		if (sscanf(input, " %d%*c%d", &start.x, &start.y) == 2) {
+		if (sscanf(input, " %d:%d", &start.x, &start.y) == 2) {
 			if (start.x >= 0 && start.x < width && start.y >= 0 && start.y < width
 				&& map[start.x][start.y].type != IMPASSABLE) {
 				break;
@@ -403,13 +411,13 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 	while(1){
 		printf("Hova menjen a GPS? (Pozíció \"x:y\" vagy \"Városnév\")\n");
 		fgets(input, City_N_Length, stdin);
-		if (sscanf(input, " %d%*c%d", &finish.x, &finish.y) == 2) {
+		if (sscanf(input, " %d:%d", &finish.x, &finish.y) == 2) {
 			if (finish.x >= 0 && finish.x < width && finish.y >= 0 && finish.y < width
 				&& map[finish.x][finish.y].type != IMPASSABLE && !compare_position(map[start.x][start.y].pos, map[finish.x][finish.y].pos)) {
 					break;
 			}
 		}else {
-			if (search_city(input, City_N_Length, map, width, height).x < 0){
+			if ((finish = search_city(input, City_N_Length, map, width, height)).x < 0){
 				printf("A megadott helyen nem található érvényes cella, kérem próbálja újra\n");
 				printf("Érvényes Városnevek: \n");
 				list_cities(defs);
@@ -453,7 +461,7 @@ int compare_position(Point A, Point B){
 	return 0;
 }
 void print_route(Cell *goal){
-	Cell * route = goal;
+	Cell *route = goal;
 	while (route->from_where != 0) {
 	printf("(%d:%d) ", route->pos.x, route->pos.y);
 	if (route->type == CITYCELL) {
@@ -464,4 +472,12 @@ void print_route(Cell *goal){
 	route = route->from_where;
 	}
 	
+}
+// ellenőrzi, van-e olyan Cell cím, ami nem elérhető
+void nullcell(cell_sortable *unvis){
+	
+	for (; unvis->next != 0; unvis = unvis->next) {
+		printf("{%d,%d} ", unvis->current->pos.x, unvis->current->pos.y);
+	}
+	printf("\n");
 }
