@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 int City_N_Length = 100;
+char leftarrow = '<', rightarrow = '>',
+uparrow = '^', downarrow = 'v';
 
 void tryopen(char *arg, FILE **f){
 	char key = 'n';
@@ -13,16 +15,17 @@ void tryopen(char *arg, FILE **f){
 		
 		} while (key == '\n');
 		if (key == 'n') {
-		enterpath(f, arg);
+		enterpath(f);
 		return;
 		}
 	}
 }
 
-void enterpath(FILE **f, char *path){
+void enterpath(FILE **f){
+	char path[50];
 	do {
 		printf("Kérem adja meg a fájl elérését! \n");
-		scanf("%s", path);
+		scanf("%49s", path); //az 50. hely az egy NULL
 		*f = fopen(path, "r");
 		if (!*f) printf("Nem valós fájlt adott meg!");
 	}while (!*f);
@@ -35,10 +38,6 @@ void initCells(Cell *cells){	// lehetne egy kicsit optimalizálni, kevesebb vál
 	hwc->speed = 2;	hwc->cost = MAX;	hwc->symbol = '=';	hwc->name = 0;	hwc->type = BASECELL;	//hwc.visited = 0;
 	cc->speed = 2;	cc->cost = MAX;	cc->symbol = ':';	cc->name = 0; cc->type = CITYCELL;			//cc.visited = 0;
 	ic->symbol = '#'; ic->type = IMPASSABLE;
-	/*cells[0] = bc; cells[0].type = BASECELL;
-	cells[1] = hwc; cells[1].type = BASECELL;
-	cells[2] = cc; cells[2].type = CITYCELL;
-	cells[3] = ic; cells[3].type = IMPASSABLE; */
 }
  // első sor beolvasva, visszaadja a szélesség*magasságot
 int readsize(int *width, int *height, FILE* file){
@@ -46,35 +45,13 @@ int readsize(int *width, int *height, FILE* file){
 	fgets(size, 20, file);
 	return sscanf(size, "%d %d\n", width, height);
 }
-// Babilóniai módszerrel számolok négyzetgyököt
-float babylonian(int S){ 
-	float guess;
-	switch (S) {
-	case 1:
-		guess = 1;
-	break;
-	case 2:
-		guess = 1.5;
-	break;
-	default:
-	guess = (float)S / 2;
-	break;
-	}
-	do {
-		guess = (guess + S/guess)/2;
-	} while(square(S - guess * guess) > 0.000001);
-	return guess;
-}
-float square(float base){
-	return base * base;
-}
 //VIGYÁZZ!! a beolvasott tömböt t[x][y]-ban lehet indexelni, ahol x a sorszám, y az oszlopszám
 void readmap(char ***map, int width, int height, FILE* file){
 	*map = (char**)calloc(height, sizeof(char*));
 	for (int x = 0; x < height; x++) {
 		(*map)[x] = (char*)calloc(width+1, sizeof(char)); // plusz egy szélesség, hogy n szélesség mellett n+1 legyen a lezáró NULL bájt
 		fgets((*map)[x], width+1, file);
-		printf("%d\t%s", x , (*map)[x]);
+		printf("%d\t%s", x, (*map)[x]);
 	}
 }
 void convert_nulls(char **map, FILE * file, int height, int width){
@@ -125,7 +102,7 @@ cell_sortable *link_cells(Cell **map, int width, int height){
 	first = iter;
 	for(int x = 0; x < height; x++){
 		for (int y = 0; y < width; y++) {
-			if (!(map[x][y].type == IMPASSABLE)) {
+			if (map[x][y].type != IMPASSABLE) {
 				cellneighbour(map, x, y, width, height);
 				iter->current = &map[x][y];
 				iter->next = calloc(1, sizeof(cell_sortable));
@@ -162,19 +139,7 @@ int parse_defs(Definition *def, FILE *file){
 		}
 	}
 	return 1;
-	/*char c;
-	while ((c = getc(file)) != '\n' && breaking != 1){
-		switch (c) {
-		case EOF:
-		return 2;
-		case '(':
-		breaking = 1; // sajnos egy break; nem működne itt
-		}
-	}
-	if ((deb = fscanf(file, "%d%*c%d%*c%s", &def->P.x, &def->P.y, def->name))) { // pl (x;y)Budapest
-		return 0;
-	}
-	return 1;*/
+
 }
 cell_sortable *bubble(cell_sortable **unvis){
 	int sorted;
@@ -199,6 +164,9 @@ cell_sortable *bubble(cell_sortable **unvis){
 	for (; rewind->prev != 0; rewind = rewind->prev) {}
 	*unvis = rewind;
 	for (; iterator->next != 0; iterator = iterator->next) {}
+	if (iterator->current->cost == maxint()) {
+		return 0;
+	}
 	return iterator;
 }
 //visszaadja, hogy hány darab van a legkisebb elemből
@@ -216,25 +184,6 @@ int determine(cell_sortable *cs){
 		}
 	}
 	return count;
-}
-cell_sortable *calculate_distance(int count, cell_sortable *cs){
-	cell_sortable *iterator = cs, *smallest;
-	int dist_min;
-	for (; iterator->next != 0; iterator= iterator->next); // lista végére lépünk
-	for ( int i = count; i > 0; i--) {
-		iterator->current->distance = babylonian(square(iterator->current->pos.x) + square(iterator->current->pos.y));
-	}
-	for (; iterator->next != 0; iterator= iterator->next);
-	dist_min = iterator->current->distance;
-	smallest = iterator;
-	for (int i = count; i > 0; i --) {
-		iterator = iterator->prev;
-		if (iterator->current->distance < dist_min ) {
-			dist_min = iterator->current->distance;
-			smallest = iterator;
-		}
-	}
-	return smallest;
 }
 // x(n) x(n+1) == cs x(n+2) x(n+3) --> x(n) x(n+2) x(n+1) == cs x(n+3) 
 void swap(cell_sortable *cs){
@@ -283,21 +232,20 @@ void cellneighbour(Cell **map, int x, int y, int width, int height){
 	map[x][y].right = &map[x][y+1];
 	}
 }
-// ez fogja megadni azt a cellát, amire végre kell hajtani a "látogatást"
-cell_sortable *minimum_distance(cell_sortable **unvisited){
-	int i;
-	i = determine(*unvisited);
-	if (i == -1) {
-	return 0;
-	}
-	return 1;
-}
+/*
+	-1: nincs érvényes útvonal
+	0: futás alatt
+	1: megvan a goal
+*/
 int visit(cell_sortable *vis){
+	if (vis == 0) {
+	return -1;
+	}
 	Cell 
 		*up = vis->current->up,
 		*down = vis->current->down,
 		*left = vis->current->left,
-		*right = vis->current->left;
+		*right = vis->current->right;
 	if	(up != 0 &&
 		up->cost > vis->current->cost + vis->current->speed) {
 
@@ -342,9 +290,14 @@ int dijkstra(cell_sortable *unvisited, Cell *goal){
 	int x = 0;
 #endif
 	while (1) {
-		if(visit(bubble(&unvisited))){
-			print_route(goal);
-			return 0;
+		switch (visit(bubble(&unvisited))) {
+			case -1:
+				return -1;
+			break;
+
+			case 1:
+			mark_route(goal);
+				return 1;
 		}
 		#ifdef DEBUG
 		nullcell(unvisited);
@@ -399,11 +352,13 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 				break;
 			}
 		}else {
-			if (search_city(input, City_N_Length, map, width, height).x < 0){
+			if ((start = search_city(input, City_N_Length, map, width, height, defs)).x < 0){
 				printf("A megadott helyen nem található érvényes cella, kérem próbálja újra\n");
 				printf("Érvényes Városnevek: \n");
 				list_cities(defs);
 				continue;
+			}else {
+				break;
 			}
 		}
 	}
@@ -413,39 +368,34 @@ Cell *ask_goal(int height, int width, Cell** map, Definition* defs){
 		fgets(input, City_N_Length, stdin);
 		if (sscanf(input, " %d:%d", &finish.x, &finish.y) == 2) {
 			if (finish.x >= 0 && finish.x < width && finish.y >= 0 && finish.y < width
-				&& map[finish.x][finish.y].type != IMPASSABLE && !compare_position(map[start.x][start.y].pos, map[finish.x][finish.y].pos)) {
+				&& map[finish.x][finish.y].type != IMPASSABLE ) {
 					break;
 			}
 		}else {
-			if ((finish = search_city(input, City_N_Length, map, width, height)).x < 0){
+			if (((finish = search_city(input, City_N_Length, map, width, height, defs))).x < 0){
 				printf("A megadott helyen nem található érvényes cella, kérem próbálja újra\n");
 				printf("Érvényes Városnevek: \n");
 				list_cities(defs);
 				continue;
+			}else if (start.x != finish.y && start.y != finish.y){
+			break;
 			}
 		}
+		
 	}
 	init_goal(&map[finish.x][finish.y], &map[start.x][start.y]);
 	return &map[finish.x][finish.y];
 }
-Point search_city(char *input, int length, Cell **map, int width, int height){
-	Cell selection; Point P; int i, strlen = 0;
-	sscanf(input, "%s\n", input); // enter kiszűrése
-	for (; strlen < length && input[strlen] != 0; strlen++)
-		for (int h = 0; h < height; h++) {
-			for (int w = 0; w < width; w++) {
-				if (map[h][w].type == CITYCELL) {
-					selection = map[h][w];
-					for (i = 0; i < length && selection.name[i] != 0
-						&& selection.name[i] == input[i]; i++) {}
-					if (i == strlen) {
-						P.x = h; P.y = w;
-						return P;
-					}
-				}
-			}
-		}
-	P.x = -1; return P;
+Point search_city(char *input, int length, Cell **map, int width, int height, Definition *defs){
+	Cell selection; Point P; int match = 0, strlen = 0; P.x = 0;
+	sscanf(input, "%s ", input); // enter kiszűrése
+	for (; defs != 0; defs = defs->next) {
+	if(comparestrings(input, defs->name) == 0){
+		return defs->P;
+	}
+	}
+	return P;
+
 }
 void list_cities(Definition *defs){
 	for (; defs->next; defs = defs->next) {
@@ -462,17 +412,102 @@ int compare_position(Point A, Point B){
 }
 void print_route(Cell *goal){
 	Cell *route = goal;
-	while (route->from_where != 0) {
-	printf("(%d:%d) ", route->pos.x, route->pos.y);
-	if (route->type == CITYCELL) {
-		printf("%s\n", route->name);
-	}else {
-	printf("\n");
+	while (route != 0) {
+		printf("(%d:%d) ", route->pos.x, route->pos.y);
+		if (route->type == CITYCELL) {
+			printf("%s\n", route->name);
+		}else {
+		printf("\n");
+		}
+		route = route->from_where;
 	}
-	route = route->from_where;
-	}
-	
+
 }
+void print_routed_map(Cell **map, Cell *goal, int height, int width){
+	for (int h = 0; h < height; h++) {
+		for (int w = 0; w < width; w++) {
+			switch (map[h][w].symbol) {
+				case '#':
+					printf("#");
+					break;
+				default:
+					if (map[h][w].goal == 1) {
+						printf("C");
+					}else if (map[h][w].cost == 0 && map[h][w].type != IMPASSABLE) {
+						printf("S");
+					}else if(map[h][w].is_route == 1){
+						printf("%c",decide_direction(&map[h][w]));
+					}else {
+					printf(" ");
+					}
+				break;
+			}
+		}
+		printf("\n");
+	}
+
+}
+char decide_direction(Cell *cell){
+	if (cell->up && cell->up->is_route && cell->up->from_where == cell) {
+		return '^';
+	}
+	if (cell->down && cell->down->is_route && cell->down->from_where == cell) {
+		return 'v';
+	}
+	if (cell->left && cell->left->is_route && cell->left->from_where == cell) {
+		return '<';
+	}
+	if (cell->right && cell->right->is_route && cell->right->from_where == cell) {
+		return '>';
+	}
+	return ' ';
+}
+int comparestrings(char *key, char *value){
+	int x = 0;
+	for (x = 0; key[x] != '\0' && value[x] != '\0'; x++) {
+		if (key[x] != value[x]) {
+			return 1; // különböznek a stringek
+		}
+	}
+	if (value[x] == '\0' && key[x] == '\0'){
+		return 0;
+	}else {
+		return 1;
+	}
+
+}
+void free_charmap(int height, char **map){
+	for (int h = 0; h < height; h++) {
+		free(map[h]);
+	}
+	free(map);
+}
+void free_cellmap(int height, Cell **map){
+	for (int h = 0; h < height; h++) {
+		free(map[h]);
+	}
+	free(map);
+}
+void free_definitions(Definition *defs){
+	Definition *next_def;
+	for (; defs != 0; defs = next_def) {
+		next_def = defs->next;
+		free(defs);
+	}
+}
+void cleanup_unvisited(cell_sortable *unvis){
+	cell_sortable *next_cs;
+	for (; unvis != 0; unvis = next_cs) {
+		next_cs = unvis->next;
+		free(unvis);
+	}
+}
+void mark_route(Cell *goal){
+	for (; goal->from_where != 0; goal = goal->from_where) {
+		goal->is_route = 1;
+	}
+}
+//DEBUG TERRITORY
 // ellenőrzi, van-e olyan Cell cím, ami nem elérhető
 void nullcell(cell_sortable *unvis){
 	
@@ -480,4 +515,23 @@ void nullcell(cell_sortable *unvis){
 		printf("{%d,%d} ", unvis->current->pos.x, unvis->current->pos.y);
 	}
 	printf("\n");
+}
+
+void printcells(Cell **map, int height, int width){
+	for (int x = 0; x < height; x++) {
+		for (int y = 0; y < width; y++) {
+			switch (map[x][y].type) {
+			case IMPASSABLE:
+				printf("#");
+				break;
+			case BASECELL:
+				printf(".");
+				break;
+			case CITYCELL:
+			printf(":");
+			break;
+			}
+		}
+			printf("\n");
+	}
 }
