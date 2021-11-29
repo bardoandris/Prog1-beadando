@@ -49,6 +49,7 @@ do{
 					readsize(&width, &height, file);
 					readmap(&charmap, width, height, file);
 					parse_cities(file, &defs);
+					list_cities(defs);
 					break;
 				}else if (same_map_key == 'i') {
 					break;
@@ -65,7 +66,7 @@ do{
 	name_cities(defs, cellmap);
 	
 	unvisited = link_cells(cellmap, width, height);
-	
+	list_cities(defs);
 	switch (dijkstra(unvisited, (goal = ask_goal(height, width, cellmap, defs)))){
 		case -1:
 			printf("Sajnos a megadott két pont között nem létezik út. \n");

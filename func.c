@@ -399,7 +399,7 @@ Point search_city(char *input, int length, Cell **map, int width, int height, De
 }
 void list_cities(Definition *defs){
 	for (; defs->next; defs = defs->next) {
-		printf("%s: %d ; %d \n", defs->name, defs->P.x, defs->P.y);
+		printf("%s: (%d;%d) \n", defs->name, defs->P.x, defs->P.y);
 	}
 }
 int compare_position(Point A, Point B){
