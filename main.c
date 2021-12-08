@@ -8,6 +8,7 @@ int main(int argc, char *argv[]){
 	Definition *defs;
 	int width, height, cell_length = 4, FILE_ERROR = 0, first_run = 1, exiting = 0;
 	Cell *cells = calloc(cell_length, sizeof(Cell)), **cellmap, *goal;
+	if (!cells) {exit(1);}
 	cell_sortable *unvisited = 0;
 	initCells(cells);
 // Fájlbeolvasás kezdete
@@ -52,6 +53,8 @@ do{
 					parse_cities(file, &defs);
 					break;
 				}else if (same_map_key == 'i') {
+					cleanup_unvisited(unvisited);
+					free_cellmap(height, cellmap);
 					break;
 				}else {
 				printf("Kérem igennel vagy nemmel válaszoljon! \n");
