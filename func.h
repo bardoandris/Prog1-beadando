@@ -37,7 +37,7 @@ int power10(int n);
 cell_sortable *bubble(cell_sortable **unvis);
 void swap (cell_sortable *cs);
 cell_sortable *minimum_distance(cell_sortable **unvisited);
-int dijkstra(cell_sortable *unvisited, Cell *goal);
+int dijkstra(cell_sortable **unvisited, Cell *goal);
 int visit(cell_sortable *vis);
 void eliminate(cell_sortable *vis);
 void name_cities(Definition *defs, Cell **map);

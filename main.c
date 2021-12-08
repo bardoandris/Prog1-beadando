@@ -5,7 +5,7 @@
 #define INPUT_BUFF 50
 int main(int argc, char *argv[]){
 	FILE *file; char path[50] = "./maps/default.map"; char key, buffer[INPUT_BUFF], same_map_key, cancellation, **charmap = NULL;
-	Definition *defs = calloc(1, sizeof(Definition));
+	Definition *defs;
 	int width, height, cell_length = 4, FILE_ERROR = 0, first_run = 1, exiting = 0;
 	Cell *cells = calloc(cell_length, sizeof(Cell)), **cellmap, *goal;
 	cell_sortable *unvisited = 0;
@@ -41,15 +41,15 @@ do{
 			sscanf(buffer, "%c", &same_map_key);
 			if (same_map_key) {
 				if (same_map_key == 'n') {
+					fclose(file);
 					enterpath(&file);
 					free_charmap(height, charmap);
 					free_cellmap(height, cellmap);
-					free_definitions(defs); defs = calloc(1, sizeof(Definition));
+					free_definitions(defs);
 					cleanup_unvisited(unvisited);
 					readsize(&width, &height, file);
 					readmap(&charmap, width, height, file);
 					parse_cities(file, &defs);
-					list_cities(defs);
 					break;
 				}else if (same_map_key == 'i') {
 					break;
@@ -67,7 +67,7 @@ do{
 	
 	unvisited = link_cells(cellmap, width, height);
 	list_cities(defs);
-	switch (dijkstra(unvisited, (goal = ask_goal(height, width, cellmap, defs)))){
+	switch (dijkstra(&unvisited, (goal = ask_goal(height, width, cellmap, defs)))){
 		case -1:
 			printf("Sajnos a megadott két pont között nem létezik út. \n");
 		break;
@@ -89,5 +89,11 @@ do{
 		}
 	}while (!(cancellation != 'i' || cancellation != 'n'));
 	}
+	fclose(file);
+	free_charmap(height, charmap);
+	free_cellmap(height, cellmap);
+	free_definitions(defs);
+	cleanup_unvisited(unvisited);
+	free(cells);
 }
 
