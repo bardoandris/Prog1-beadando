@@ -25,7 +25,8 @@ void enterpath(FILE **f){
 	char path[50];
 	do {
 		printf("Kérem adja meg a fájl elérését! \n");
-		scanf("%49s", path); //az 50. hely az egy NULL
+		fgets(path, 50, stdin); //az 50. hely az egy NULL
+		sscanf(path, "%s", path);
 		*f = fopen(path, "r");
 		if (!*f) printf("Nem valós fájlt adott meg!");
 	}while (!*f);
@@ -47,9 +48,9 @@ int readsize(int *width, int *height, FILE* file){
 }
 //VIGYÁZZ!! a beolvasott tömböt t[x][y]-ban lehet indexelni, ahol x a sorszám, y az oszlopszám
 void readmap(char ***map, int width, int height, FILE* file){
-	*map = (char**)calloc(height, sizeof(char*));
+	if(!(*map = (char**)calloc(height, sizeof(char*)))){exit(1);}
 	for (int x = 0; x < height; x++) {
-		(*map)[x] = (char*)calloc(width+1, sizeof(char)); // plusz egy szélesség, hogy n szélesség mellett n+1 legyen a lezáró NULL bájt
+		if(!((*map)[x] = (char*)calloc(width+1, sizeof(char)))){exit(1);} // plusz egy szélesség, hogy n szélesség mellett n+1 legyen a lezáró NULL bájt
 		fgets((*map)[x], width+1, file);
 		printf("%d\t%s", x, (*map)[x]);
 	}
@@ -70,9 +71,9 @@ void print_map(int height, char** map){
 }
 
 int convert_tocells(char **map, int height, int width, Cell *cells, Cell ***cellmap){
-	*cellmap = (Cell**)calloc(height, sizeof(Cell*));
+	if(!(*cellmap = (Cell**)calloc(height, sizeof(Cell*)))){exit(1);}
 	for (int x = 0; x < height; x++) {
-		(*cellmap)[x] = (Cell*)calloc(width, sizeof(Cell));
+		if(!((*cellmap)[x] = (Cell*)calloc(width, sizeof(Cell)))){exit(1);}
 		for (int y = 0; y < width; y++) {
 		if (cell_search(cells, map[x][y], &(*cellmap)[x][y])){
 			return 1;
@@ -99,6 +100,7 @@ int cell_search(Cell *cells_list, char c, Cell *cellmap){
 //összeköti a celleket a szomszédjukkal, és visszaadja a meg nem látogatott cellek listáját
 cell_sortable *link_cells(Cell **map, int width, int height){
 	cell_sortable *first,*iter = calloc(1, sizeof(cell_sortable));
+	if (!iter) {exit(1);}
 	first = iter;
 	for(int x = 0; x < height; x++){
 		for (int y = 0; y < width; y++) {
@@ -106,6 +108,7 @@ cell_sortable *link_cells(Cell **map, int width, int height){
 				cellneighbour(map, x, y, width, height);
 				iter->current = &map[x][y];
 				iter->next = calloc(1, sizeof(cell_sortable));
+				if (!iter->next) {exit(1);}
 				iter->next->prev = iter;
 				iter = iter->next;
 			}
@@ -116,12 +119,12 @@ cell_sortable *link_cells(Cell **map, int width, int height){
 	return first;
 }
 int parse_cities(FILE *file, Definition **defs){
+	if(!(*defs = calloc(1, sizeof(Definition)))){exit(1);}
 	Definition *prev , *iterator = *defs;
-	iterator->name = calloc(City_N_Length, sizeof(char));
-	for (int x = 0; x != 1; iterator = iterator->next ) {
+	for (int x = 0; x!=1; iterator = iterator->next ) {
 		prev = iterator;
-		iterator->next = calloc(1, sizeof(Definition));
-		iterator->name = calloc(City_N_Length, sizeof(char));
+		if(!(iterator->next = calloc(1, sizeof(Definition)))){exit(1);}
+		if(!(iterator->name = calloc(City_N_Length, sizeof(char)))){exit(1);}
 		x = parse_defs(iterator, file);
 		
 	}
@@ -285,12 +288,12 @@ int visit(cell_sortable *vis){
 	eliminate(vis);
 	return 0;
 }
-int dijkstra(cell_sortable *unvisited, Cell *goal){
+int dijkstra(cell_sortable **unvisited, Cell *goal){
 #ifdef DEBUG
 	int x = 0;
 #endif
 	while (1) {
-		switch (visit(bubble(&unvisited))) {
+		switch (visit(bubble(unvisited))) {
 			case -1:
 				return -1;
 			break;
@@ -492,15 +495,20 @@ void free_definitions(Definition *defs){
 	Definition *next_def;
 	for (; defs != 0; defs = next_def) {
 		next_def = defs->next;
+		free(defs->name);
 		free(defs);
 	}
 }
 void cleanup_unvisited(cell_sortable *unvis){
-	cell_sortable *next_cs;
-	for (; unvis != 0; unvis = next_cs) {
+	cell_sortable *next_cs = 0;
+	if(unvis){
+		next_cs = unvis->next;
+	}
+	for (; next_cs != 0; unvis = next_cs) {
 		next_cs = unvis->next;
 		free(unvis);
 	}
+	free(unvis);
 }
 void mark_route(Cell *goal){
 	for (; goal->from_where != 0; goal = goal->from_where) {
